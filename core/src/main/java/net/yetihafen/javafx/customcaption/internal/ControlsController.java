@@ -48,11 +48,22 @@ public class ControlsController implements Initializable {
 
 
     public void hoverButton(@Nullable CustomizedStage.CaptionButton hoveredButton) {
-        Button button = hoveredButton != null ? switch (hoveredButton) {
-            case CLOSE -> closeButton;
-            case MAXIMIZE_RESTORE -> maximizeRestoreButton;
-            case MINIMIZE -> minimizeButton;
-        } : null;
+        Button button = null;
+
+        if (hoveredButton != null) {
+            switch (hoveredButton) {
+                case CLOSE:
+                    button = closeButton;
+                    break;
+                case MAXIMIZE_RESTORE:
+                    button = maximizeRestoreButton;
+                    break;
+                case MINIMIZE:
+                    button = minimizeButton;
+                    break;
+            }
+        }
+
 
         for(Button btn : buttons) {
             btn.setTextFill(config.getIconColor());
@@ -69,9 +80,14 @@ public class ControlsController implements Initializable {
 
     public void onResize(WinDef.WPARAM wParam) {
         switch (wParam.intValue()) {
-            case 2 /*SIZE_MAXIMIZED*/ -> maximizeRestoreButton.setText("\uE923");
-            case 0 /*SIZE_RESTORED*/ -> maximizeRestoreButton.setText("\uE922");
+            case 2: // SIZE_MAXIMIZED
+                maximizeRestoreButton.setText("\uE923");
+                break;
+            case 0: // SIZE_RESTORED
+                maximizeRestoreButton.setText("\uE922");
+                break;
         }
+
     }
 
     @Override

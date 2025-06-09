@@ -198,26 +198,31 @@ public class CustomizedStage {
 
         @Override
         public WinDef.LRESULT callback(WinDef.HWND hWnd, int msg, WinDef.WPARAM wParam, WinDef.LPARAM lParam) {
-            return switch (msg) {
-                case WM_NCCALCSIZE -> onWmNcCalcSize(hWnd, msg, wParam, lParam);
-                case WM_NCHITTEST -> onWmNcHitTest(hWnd, msg, wParam, lParam);
-                case WM_NCLBUTTONDOWN -> onWmNcLButtonDown(hWnd, msg, wParam, lParam);
-                case WM_NCMOUSEMOVE -> onWmNcMouseMove(hWnd, msg, wParam, lParam);
-                case WM_NCMOUSELEAVE, WM_MOUSELEAVE -> {
-                    if(isRootReplaced) {
+            switch (msg) {
+                case WM_NCCALCSIZE:
+                    return onWmNcCalcSize(hWnd, msg, wParam, lParam);
+                case WM_NCHITTEST:
+                    return onWmNcHitTest(hWnd, msg, wParam, lParam);
+                case WM_NCLBUTTONDOWN:
+                    return onWmNcLButtonDown(hWnd, msg, wParam, lParam);
+                case WM_NCMOUSEMOVE:
+                    return onWmNcMouseMove(hWnd, msg, wParam, lParam);
+                case WM_NCMOUSELEAVE:
+                case WM_MOUSELEAVE:
+                    if (isRootReplaced) {
                         controller.hoverButton(null);
                         acitveButton = null;
                     }
-                    yield DefWndProc(hWnd, msg, wParam, lParam);
-                }
-                case WM_SIZE -> {
-                    if(controller != null)
+                    return DefWndProc(hWnd, msg, wParam, lParam);
+                case WM_SIZE:
+                    if (controller != null)
                         controller.onResize(wParam);
-                    yield DefWndProc(hWnd, msg, wParam, lParam);
-                }
-                default -> DefWndProc(hWnd, msg, wParam, lParam);
-            };
+                    return DefWndProc(hWnd, msg, wParam, lParam);
+                default:
+                    return DefWndProc(hWnd, msg, wParam, lParam);
+            }
         }
+
 
         private WinDef.LRESULT onWmNcMouseMove(WinDef.HWND hWnd, int msg, WinDef.WPARAM wParam, WinDef.LPARAM lParam) {
             // when not using controls this is not needed
@@ -225,12 +230,22 @@ public class CustomizedStage {
 
             int position = wParam.intValue();
 
-            CaptionButton newButton = switch (position) {
-                case HTCLOSE -> CaptionButton.CLOSE;
-                case HTMAXBUTTON -> CaptionButton.MAXIMIZE_RESTORE;
-                case HTMINBUTTON -> CaptionButton.MINIMIZE;
-                default -> null;
-            };
+            CaptionButton newButton;
+            switch (position) {
+                case HTCLOSE:
+                    newButton = CaptionButton.CLOSE;
+                    break;
+                case HTMAXBUTTON:
+                    newButton = CaptionButton.MAXIMIZE_RESTORE;
+                    break;
+                case HTMINBUTTON:
+                    newButton = CaptionButton.MINIMIZE;
+                    break;
+                default:
+                    newButton = null;
+                    break;
+            }
+
 
             // continue only if a different button was hovered
             if(newButton == acitveButton) return new LRESULT(0);
@@ -253,22 +268,20 @@ public class CustomizedStage {
         private WinDef.LRESULT onWmNcLButtonDown(WinDef.HWND hWnd, int msg, WinDef.WPARAM wParam, WinDef.LPARAM lParam) {
             int position = wParam.intValue();
 
-            return switch (position) {
-                case HTMINBUTTON -> {
-                    User32Ex.INSTANCE.SendMessage(hWnd, WinUser.WM_SYSCOMMAND, new WinDef.WPARAM(SC_MINIMIZE), new WinDef.LPARAM(0));
-                    yield new WinDef.LRESULT(0);
-                }
-                case HTMAXBUTTON -> {
-                    boolean maximized = NativeUtilities.isMaximized(hWnd);
-                    User32Ex.INSTANCE.SendMessage(hWnd, WinUser.WM_SYSCOMMAND, new WinDef.WPARAM(maximized ? SC_RESTORE : SC_MAXIMIZE), new WinDef.LPARAM(0));
-                    yield new WinDef.LRESULT(0);
-                }
-                case HTCLOSE -> {
-                    User32Ex.INSTANCE.SendMessage(hWnd, WinUser.WM_SYSCOMMAND, new WinDef.WPARAM(SC_CLOSE), new WinDef.LPARAM(0));
-                    yield new WinDef.LRESULT(0);
-                }
-                default -> DefWndProc(hWnd, msg, wParam, lParam);
-            };
+            if (position == HTMINBUTTON) {
+                User32Ex.INSTANCE.SendMessage(hWnd, WinUser.WM_SYSCOMMAND, new WinDef.WPARAM(SC_MINIMIZE), new WinDef.LPARAM(0));
+                return new WinDef.LRESULT(0);
+            } else if (position == HTMAXBUTTON) {
+                boolean maximized = NativeUtilities.isMaximized(hWnd);
+                User32Ex.INSTANCE.SendMessage(hWnd, WinUser.WM_SYSCOMMAND, new WinDef.WPARAM(maximized ? SC_RESTORE : SC_MAXIMIZE), new WinDef.LPARAM(0));
+                return new WinDef.LRESULT(0);
+            } else if (position == HTCLOSE) {
+                User32Ex.INSTANCE.SendMessage(hWnd, WinUser.WM_SYSCOMMAND, new WinDef.WPARAM(SC_CLOSE), new WinDef.LPARAM(0));
+                return new WinDef.LRESULT(0);
+            } else {
+                return DefWndProc(hWnd, msg, wParam, lParam);
+            }
+
         }
 
         private WinDef.LRESULT onWmNcHitTest(WinDef.HWND hWnd, int msg, WinDef.WPARAM wParam, WinDef.LPARAM lParam) {

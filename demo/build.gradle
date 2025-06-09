@@ -4,6 +4,7 @@ plugins {
     id 'org.javamodularity.moduleplugin' version '1.8.12'
     id 'org.openjfx.javafxplugin' version '0.0.13'
     id 'org.beryx.jlink' version '2.25.0'
+    id 'com.github.johnrengelman.shadow' version '8.1.1' // Добавлен ShadowJar
 }
 
 repositories {
@@ -15,8 +16,8 @@ ext {
     junitVersion = '5.10.2'
 }
 
-sourceCompatibility = '21'
-targetCompatibility = '21'
+sourceCompatibility = '11'
+targetCompatibility = '11'
 
 tasks.build.dependsOn(":core:publishToMavenLocal")
 tasks.run.dependsOn(":core:publishToMavenLocal")
@@ -31,12 +32,14 @@ application {
 }
 
 javafx {
-    version = '21'
+    version = '14'
     modules = ['javafx.controls', 'javafx.fxml']
 }
 
 dependencies {
-    implementation("net.yetihafen:javafx-customcaption:${rootProject.properties.version}")
+    implementation(files("./libs/core.jar"))
+    implementation 'net.java.dev.jna:jna:5.12.1'
+    implementation 'net.java.dev.jna:jna-platform:5.12.1'
     testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
 }
@@ -44,6 +47,17 @@ dependencies {
 test {
     useJUnitPlatform()
 }
+
+// ShadowJar task configuration
+shadowJar {
+    archiveClassifier.set('all')
+    mergeServiceFiles() // полезно для модульных приложений
+    manifest {
+        attributes 'Main-Class': 'net.yetihafen.demo.DemoApplication'
+    }
+}
+
+build.dependsOn(shadowJar)
 
 jlink {
     imageZip = project.file("${buildDir}/distributions/JFXCC-Demo-${javafx.platform.classifier}.zip")
